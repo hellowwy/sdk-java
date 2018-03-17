@@ -1,9 +1,6 @@
 package com.elasticcloudservice.predict.util;
 
-import com.elasticcloudservice.predict.bean.Input;
-import com.elasticcloudservice.predict.bean.Request;
-import com.elasticcloudservice.predict.bean.Server;
-import com.elasticcloudservice.predict.bean.VirtualMachine;
+import com.elasticcloudservice.predict.bean.*;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -11,78 +8,115 @@ import java.util.*;
 
 public class Extract {
 
-    public static Input getInput(String[] inputContent) {
-        Input input = Input.getInstance();
+    private static int MICROSECOND_IN_DAY = 24 * 3600 * 1000;
 
+    public static void preExtractData(String[] ecsContent){
 
-        input.setServer(getServerByString(inputContent[0]));
+        Date startDay = getDateOnly(ecsContent[0]);
+        Date endDay = getDateOnly(ecsContent[ecsContent.length-1]);
+        int dayCnt = (int)((endDay.getTime() - startDay.getTime()) / MICROSECOND_IN_DAY) + 1;
 
-        int vmCnt = Integer.valueOf(inputContent[2]);
-        input.setVirtualMachineCnt(vmCnt);
+        Map<Date,Map<String, Integer>> preMap = initDateMapMap(dayCnt,startDay);
 
-        Map<String, VirtualMachine> virtualMachines = new HashMap<>();
-        if (vmCnt != 0) {
-            for (int i = 0; i < vmCnt; i++) {
-                String[] info = inputContent[i+3].split(" ");
-                virtualMachines.put(info[0],new VirtualMachine(info[0],
-                        Integer.valueOf(info[1]), Integer.valueOf(info[2])));
+        for (String requestString : ecsContent) {
+            updateDateMapMap(requestString,preMap);
+        }
+
+        Map<String,Integer[]> dataMap = getTypeIntegersMap(Input.getInstance().getVmTypes(), dayCnt, startDay, preMap);
+
+    }
+
+    private static Map<Date,Map<String, Integer>> initDateMapMap(int length, Date startDay) {
+
+        Map<Date,Map<String, Integer>> dataMaps = new TreeMap<>();
+
+        Calendar calendar = new GregorianCalendar();
+        calendar.setTime(startDay);
+
+        for(int i = 0; i< length; i++) {
+            Date date = calendar.getTime();
+            dataMaps.put(date,initCntMap());
+            calendar.add(Calendar.DATE,1);
+        }
+
+        return dataMaps;
+    }
+
+    private static Map<String,Integer> initCntMap() {
+
+        Set<String> typeSet = Input.getInstance().getVmTypes();
+        Map<String,Integer> map = new HashMap<>();
+        for (String type : typeSet) {
+            map.put(type,0);
+        }
+        return map;
+    }
+
+    private static Date getDateOnly(String requestString) {
+        String[] info = requestString.split("\t");
+        String dateStr = info[2].substring(0,10);
+        Date date = null;
+        try {
+            date = new SimpleDateFormat("yyyy-MM-dd").parse(dateStr);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return date;
+    }
+
+    private static void updateDateMapMap(String requestString, Map<Date,Map<String,Integer>> dateMapMap) {
+
+        String[] info = requestString.split("\t");
+
+        String vmType = info[1];
+        Set<String> vmTypes = Input.getInstance().getVmTypes();
+
+        Date date = getDateOnly(requestString);
+
+        if (vmTypes.contains(vmType)) {
+
+            Map<String, Integer> cntMap;
+            cntMap = dateMapMap.get(date);
+            cntMap.put(vmType,cntMap.get(vmType) + 1);
+            dateMapMap.put(date,cntMap);
+        }
+
+    }
+
+    private static Map<String,Integer[]> getTypeIntegersMap(Set<String> vmTypes, int length, Date startDay,
+                                                            Map<Date,Map<String, Integer>> dateMapMap) {
+
+        Map<String,Integer[]> map = new HashMap<>();
+
+        Integer[][] integers = new Integer[vmTypes.size()][length];
+        for (int i = 0; i < vmTypes.size(); i++) {
+            for (int j = 0; j < length; j++) {
+                integers[i][j] = 0;
             }
         }
-        input.setVirtualMachines(virtualMachines);
 
-        input.setOptimizedObject(inputContent[vmCnt+4]);
-
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        try {
-            input.setStartDate(simpleDateFormat.parse(inputContent[vmCnt+6]));
-            input.setEndDate(simpleDateFormat.parse(inputContent[vmCnt+7]));
-        } catch (ParseException e) {
-            e.printStackTrace();
+        int position  = 0;
+        for (String type : vmTypes) {
+            map.put(type,integers[position++]);
         }
 
-        return input;
-    }
+        Calendar calendar = new GregorianCalendar();
+        calendar.setTime(startDay);
 
-    private static Server getServerByString(String serverInfo){
-        String[] info = serverInfo.split(" ");
-        return new Server(Integer.valueOf(info[0]),
-                Integer.valueOf(info[1]), Integer.valueOf(info[2]));
-
-    }
-
-    public static Request[] getRequests(String[] ecsContent){
-       int cnt = ecsContent.length;
-       List<Request> requestList = new ArrayList<>();
-       for (int i = 0; i < cnt; i++) {
-           Request temp = getRequestByString(ecsContent[i]);
-           if (temp != null) {
-               requestList.add(temp);
-           }
-       }
-
-       return requestList.toArray(new Request[requestList.size()]);
-    }
-
-    private static Request getRequestByString(String requestInfo) {
-
-        String[] info = requestInfo.split("\t");
-        Input input = Input.getInstance();
-
-//        String vmType = info[1];
-        VirtualMachine virtualMachine = input.getVirtualMachines().get(info[1]);
-        if (virtualMachine == null) {
-            return null;
+        for (int i = 0; i < length; i++) {
+            Date date = calendar.getTime();
+            Map<String, Integer> dayMap = dateMapMap.get(date);
+            for (Map.Entry<String, Integer> entry : dayMap.entrySet()) {
+                String vmType = entry.getKey();
+                Integer[] ints = map.get(vmType);
+                ints[i] = entry.getValue();
+                map.put(vmType, ints);
+            }
+            calendar.add(Calendar.DATE,1);
         }
 
-        Date buildTime = null;
-        try {
-            buildTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(info[2]);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
-//        String vmId = info[0];
-        return new Request(info[0], virtualMachine, buildTime);
+        return map;
     }
+
 
 }
