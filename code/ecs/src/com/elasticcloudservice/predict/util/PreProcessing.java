@@ -6,14 +6,25 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class Extract {
+/**
+ * @Author Believening
+ * @Description: 用于训练数据的预处理的工具类
+ * @Date: Modified in 4:00 PM 3/18/18
+ */
 
-    private static int MICROSECOND_IN_DAY = 24 * 3600 * 1000;
+public class PreProcessing {
 
-    public static void preExtractData(String[] ecsContent){
+    /**
+     * 静态方法 用于训练数据的预提取
+     * @param ecsContent 训练数据字符串数组
+     * @return dataMap  Map<String,Integer[]> 虚拟机类型 —> 训练集日期段日申请量数组
+     *
+     */
+    public static Map<String,Integer[]> preExtractData(String[] ecsContent){
 
         Date startDay = getDateOnly(ecsContent[0]);
         Date endDay = getDateOnly(ecsContent[ecsContent.length-1]);
+        int MICROSECOND_IN_DAY = 24 * 3600 * 1000;
         int dayCnt = (int)((endDay.getTime() - startDay.getTime()) / MICROSECOND_IN_DAY) + 1;
 
         Map<Date,Map<String, Integer>> preMap = initDateMapMap(dayCnt,startDay);
@@ -22,13 +33,19 @@ public class Extract {
             updateDateMapMap(requestString,preMap);
         }
 
-        Map<String,Integer[]> dataMap = getTypeIntegersMap(Input.getInstance().getVmTypes(), dayCnt, startDay, preMap);
-
+        return getTypeIntegersMap(Input.getInstance().getVmTypes(), dayCnt, startDay, preMap);
     }
 
+    /**
+     * 私有静态方法 初始化中间数据 Map 容器对象
+     * @param length 训练集覆盖天数
+     * @param startDay 训练集起始记录日期
+     * @return dataMaps Map<Date,Map<String, Integer>>
+     *                  Date 为键， Map<String, Integer> 虚拟机类型 —> 当日申请量 为值
+     */
     private static Map<Date,Map<String, Integer>> initDateMapMap(int length, Date startDay) {
 
-        Map<Date,Map<String, Integer>> dataMaps = new TreeMap<>();
+        Map<Date,Map<String, Integer>> dataMaps = new HashMap<>();
 
         Calendar calendar = new GregorianCalendar();
         calendar.setTime(startDay);
@@ -42,6 +59,10 @@ public class Extract {
         return dataMaps;
     }
 
+    /**
+     * 私有静态方法 初始化各类型虚拟机日申请量为 0 的 Map对象
+     * @return Map<String, Integer> 虚拟机类型 —> 当日申请量
+     */
     private static Map<String,Integer> initCntMap() {
 
         Set<String> typeSet = Input.getInstance().getVmTypes();
@@ -52,6 +73,11 @@ public class Extract {
         return map;
     }
 
+    /**
+     * 私有静态方法 获取请求记录的日期 Date 对象
+     * @param requestString 虚拟机请求记录
+     * @return date Date 该请求发生的日期，时分秒归零
+     */
     private static Date getDateOnly(String requestString) {
         String[] info = requestString.split("\t");
         String dateStr = info[2].substring(0,10);
@@ -64,6 +90,10 @@ public class Extract {
         return date;
     }
 
+    /**
+     * 私有静态方法 根据请求更新数据 Map 容器对象的数据
+     * @param requestString  String 虚拟机请求记录
+     */
     private static void updateDateMapMap(String requestString, Map<Date,Map<String,Integer>> dateMapMap) {
 
         String[] info = requestString.split("\t");
@@ -83,6 +113,11 @@ public class Extract {
 
     }
 
+    /**
+     *
+     * @param vmTypes Set<String> 需要预测的虚拟机类型集合
+     * @return dataMap  Map<String,Integer[]> 虚拟机类型 —> 训练集日期段日申请量数组
+     */
     private static Map<String,Integer[]> getTypeIntegersMap(Set<String> vmTypes, int length, Date startDay,
                                                             Map<Date,Map<String, Integer>> dateMapMap) {
 
@@ -117,6 +152,5 @@ public class Extract {
 
         return map;
     }
-
 
 }

@@ -1,6 +1,6 @@
 package com;
 
-import com.elasticcloudservice.predict.util.Extract;
+import com.elasticcloudservice.predict.util.PreProcessing;
 import com.elasticcloudservice.predict.bean.Input;
 import com.filetool.util.FileUtil;
 
@@ -13,7 +13,7 @@ public class Test {
         String[] inputContent = FileUtil.read(inputFilepath,null);
 
         Input input = Input.getInstance(inputContent);
-        Extract.preExtractData(ecsContent);
+        PreProcessing.preExtractData(ecsContent);
 
 
     }

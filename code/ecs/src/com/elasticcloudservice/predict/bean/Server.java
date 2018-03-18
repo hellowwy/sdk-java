@@ -16,23 +16,23 @@ public class Server {
         return serverCpuCnt;
     }
 
-//    public void setServerCpuCnt(int serverCpuCnt) {
-//        this.serverCpuCnt = serverCpuCnt;
-//    }
+    public void setServerCpuCnt(int serverCpuCnt) {
+        this.serverCpuCnt = serverCpuCnt;
+    }
 
     public int getServerMemoryGb() {
         return serverMemoryGb;
     }
 
-//    public void setServerMemoryGb(int serverMemoryGb) {
-//        this.serverMemoryGb = serverMemoryGb;
-//    }
+    public void setServerMemoryGb(int serverMemoryGb) {
+        this.serverMemoryGb = serverMemoryGb;
+    }
 
     public int getServerHardDiskGb() {
         return serverHardDiskGb;
     }
 
-//    public void setServerHardDiskGb(int serverHardDiskGb) {
-//        this.serverHardDiskGb = serverHardDiskGb;
-//    }
+    public void setServerHardDiskGb(int serverHardDiskGb) {
+        this.serverHardDiskGb = serverHardDiskGb;
+    }
 }
