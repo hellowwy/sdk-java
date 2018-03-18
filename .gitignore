@@ -1,0 +1,8 @@
+#java
+.idea
+out
+
+#build file
+*.sh
+*.txt
+*.md
