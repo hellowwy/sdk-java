@@ -2,15 +2,17 @@ package com.elasticcloudservice.predict.bean;
 
 import java.util.Objects;
 
-public class VirtualMachine {
+public class VirtualMachine implements Cloneable {
     private String type;
     private int cpuCnt;
     private int memoryMb;
+//    private float cmr;
 
     public VirtualMachine(String type, int cpuCnt, int memoryMb) {
         this.type = type;
         this.cpuCnt = cpuCnt;
         this.memoryMb = memoryMb;
+//        updateCMR();
     }
 
     public String getType() {
@@ -37,6 +39,13 @@ public class VirtualMachine {
 //        this.memoryMb = memoryMb;
 //    }
 
+//    public float getCmr() {
+//        return cmr;
+//    }
+
+//    private void updateCMR(){
+//        this.cmr = (float)this.cpuCnt * 1024 / this.memoryMb;
+//    }
 
     @Override
     public boolean equals(Object o) {
@@ -54,4 +63,8 @@ public class VirtualMachine {
         return Objects.hash(type, cpuCnt, memoryMb);
     }
 
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
 }
