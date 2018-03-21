@@ -1,6 +1,4 @@
 #java build
-/code/ecs/
-!/code/ecs/src/
 
 #build file
 *.sh
